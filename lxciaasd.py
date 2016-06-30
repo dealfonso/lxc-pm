@@ -23,6 +23,11 @@ import cpyutils.restutils
 import lxciaas.nodeinfo as nodeinfo
 import lxciaas.lxclib as lxclib
 
+ACCESS_USER = ""
+ACCESS_TOKEN = "1e55e7e4-b369-45d2-a484-eb6ea48d5da1"
+DEFAULT_LXC_PM_HOST_LISTEN_PORT = 15909
+DEFAULT_LXC_PM_HOST_LISTEN_HOST = "localhost"
+
 app = cpyutils.restutils.get_app()
 
 # In order to use basic authentication, it is enough to use the decorator
@@ -31,12 +36,13 @@ app = cpyutils.restutils.get_app()
 # You'd have to implement your authentication backend (e.g. database or a
 # simple password check)'
 def check_pass(username, password):
-    return username == password
+    return (username == ACCESS_USER) and (password == ACCESS_TOKEN) 
 
 # https://realpython.com/blog/python/api-integration-in-python/
 # http://docs.python-requests.org/en/master/user/authentication/
 
 @app.route('/')
+@bottle.auth_basic(check_pass)
 def get_server_info():
     return cpyutils.restutils.response_json(nodeinfo.get_nodeinfo())
 
@@ -107,7 +113,7 @@ def delete_container(containername):
 def main_function():
     #r = Request.from_json({"name": "mycont", "distribution":"ubuntu","release":"xenial"})
     #r.create_container()
-    cpyutils.restutils.run('0.0.0.0', 10000)
+    cpyutils.restutils.run(DEFAULT_LXC_PM_HOST_LISTEN_HOST, DEFAULT_LXC_PM_HOST_LISTEN_PORT)
     
 if __name__ == '__main__':
     main_function()
