@@ -44,8 +44,15 @@ def check_pass(username, password):
     return (username == ACCESS_USER) and (password == ACCESS_TOKEN) 
 
 @app.route('/')
-@bottle.auth_basic(check_pass)
+# @bottle.auth_basic(check_pass)
 def get_server_info():
+    extra_headers = {
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Origin': '*'
+    }
+    for header, value in extra_headers.items():
+        bottle.response.add_header(header, value)
     return cpyutils.restutils.response_json(get_monitor().get_jsonable())
 
 @app.route('/:hostname')
@@ -94,6 +101,7 @@ class HostInfo(jsonlib.Serializable):
 
         if resp.status_code == 200:
             self.hostinfo = resp.json()
+            self.hostinfo['hostname'] = self._hostname
             self._lastpoll = cpyutils.eventloop.now()
             return True, ""
 
@@ -110,7 +118,7 @@ class MonitoringInfo:
         # * it is managed as a cache to be able to return the information immediately
         #   as the data structure ready to be used with the json library is created here
         #   instead of creating it with the function get_jsonable()
-        self.hostsInfo_json = {}
+        # self.hostsInfo_json = {}
         self._poll_queue = []
         self._event_next_poll_id = None
 
@@ -120,17 +128,17 @@ class MonitoringInfo:
         return postprocessed_info
 
     def get_json(self):
-        self.__lock_data.acquire()
-        json_str = json.dumps(self.hostsInfo_json)
-        self.__lock_data.release()
+        # self.__lock_data.acquire()
+        json_str = json.dumps(self.get_jsonable())
+        # self.__lock_data.release()
         return json_str
         
-
     def get_jsonable(self):
         self.__lock_data.acquire()
         hostsInfo_jsonable = {}
+        hostsInfo_jsonable['hosts'] = []
         for hostname in self.hostsInfo:
-            hostsInfo_jsonable[hostname] = self._postprocess_hostinfo(self.hostsInfo[hostname])
+            hostsInfo_jsonable['hosts'].append(self._postprocess_hostinfo(self.hostsInfo[hostname]))
         hostsInfo_jsonable['timestamp'] = cpyutils.eventloop.now()
         self.__lock_data.release()
         return hostsInfo_jsonable
@@ -139,7 +147,7 @@ class MonitoringInfo:
         if port is None: port = DEFAULT_LXC_PM_HOST_LISTEN_PORT
         self.__lock_data.acquire()
         self.hostsInfo[hostname] = HostInfo(hostname, port)
-        self.hostsInfo_json[hostname] = {}
+        # self.hostsInfo_json[hostname] = {}
         self.__lock_data.release()
 
     def _cancel_next_poll(self):
@@ -194,7 +202,7 @@ class MonitoringInfo:
             if not polled:
                 _logger.error("failed to poll host %s (%s)" % (current_host, message))
             else:
-                self.hostsInfo_json[current_host] = self._postprocess_hostinfo(self.hostsInfo[current_host])
+                # self.hostsInfo_json[current_host] = self._postprocess_hostinfo(self.hostsInfo[current_host])
                 _logger.debug("host %s polled" % current_host)
 
         finished_polling = (len(self._poll_queue) == 0)
