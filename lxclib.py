@@ -45,6 +45,9 @@ class LXCContainer(lxc.Container, jsonlib.Serializable):
             return c
         return None
     
+    def __str__(self):
+        return self.json()
+
     def get_extra_info(self):
         self._get_config_info()
         self.config = file_to_json(self.config_file_name)
@@ -103,9 +106,9 @@ class Request:
         new_container.create(None, args={"distribution": "%s" % self.distribution, "release": "%s" % self.release, "architecture": "%s" % self.architecture})
         # print s.serialize(new_container)
         if new_container.defined:
-            return True, cpyutils.restutils.response_json(new_container.serialize())
+            return True, new_container
         else:
-            return False, cpyutils.restutils.error(500, "failed to create a container")
+            return False, new_container.json()
 
 if __name__ == "__main__":
     c = LXCContainer.pick("onedock-test")

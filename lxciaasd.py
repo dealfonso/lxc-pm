@@ -67,11 +67,11 @@ def create_container(containername):
         return cpyutils.restutils.error(400, "Malformed json")
 
     # Now we'll try to create the container
-    result, explanation = request.create_container()
+    result, container = request.create_container()
     if result:
-        return cpyutils.restutils.response_txt(explanation)
+        return True, cpyutils.restutils.response_json(container.serialize())
     else:
-        return cpyutils.restutils.error(409, explanation)
+        return False, cpyutils.restutils.error(409, "failed to create a container")
 
 @app.route('/:containername', method = 'GET')
 def get_container(containername):
@@ -111,9 +111,13 @@ def delete_container(containername):
     return cpyutils.restutils.error(500, "could not destroy container %s" % containername)
 
 def main_function():
-    #r = Request.from_json({"name": "mycont", "distribution":"ubuntu","release":"xenial"})
-    #r.create_container()
-    cpyutils.restutils.run(DEFAULT_LXC_PM_HOST_LISTEN_HOST, DEFAULT_LXC_PM_HOST_LISTEN_PORT)
+    r = lxclib.Request.from_json({"name": "mycont", "distribution":"ubuntu","release":"xenial"})
+    created, container = r.create_container()
+    print created
+    print container
+    if created:
+        container.start()
+    #cpyutils.restutils.run(DEFAULT_LXC_PM_HOST_LISTEN_HOST, DEFAULT_LXC_PM_HOST_LISTEN_PORT)
     
 if __name__ == '__main__':
     main_function()
