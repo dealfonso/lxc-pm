@@ -45,9 +45,6 @@ class LXCContainer(lxc.Container, jsonlib.Serializable):
             return c
         return None
     
-    def __str__(self):
-        return self.json()
-
     def get_extra_info(self):
         self._get_config_info()
         self.config = file_to_json(self.config_file_name)
@@ -78,13 +75,17 @@ def get_containers():
         containers.append(current_container.get_jsonable())
     return containers    
     
-class Request:
+class Request(jsonlib.Serializable):
+    _JSON_FIELDS_required = [ 'distribution', 'name', 'release' ]
+    _JSON_FIELDS_default = { 'architecture': 'amd64' }
+
     def __init__(self, name):
         self.name = name
         self.distribution = None
         self.release = None
         self.architecture = None
-        
+
+    '''    
     @classmethod
     def from_json(cls, json_):
         if 'distribution' not in json_ or 'release' not in json_:
@@ -98,7 +99,11 @@ class Request:
         request.distribution = json_['distribution']
         request.release = json_['release']
         return request
-    
+    '''
+    @classmethod
+    def from_json(cls, json_):
+        json.Serializable.from_json(cls(), json_)
+
     def create_container(self):
         new_container = LXCContainer(self.name)
         if new_container.defined:

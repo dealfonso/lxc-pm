@@ -43,6 +43,37 @@ class ObjectSerializer(object):
         return d
 
 class Serializable(object):
+    _JSON_FIELDS_required = []
+    _JSON_FIELDS_other = []
+    _JSON_FIELDS_default = {}
+
+    @classmethod
+    def from_json(nd_class, nd_object, json_str):
+        try:
+            json_object = json.loads(json_str)
+        except:
+            return None
+        
+        for i in nd_object._JSON_FIELDS_required:
+            if i not in json_object:
+                return None
+            nd_object.__setattr__(i, json_object[i])
+
+        for i in nd_object._JSON_FIELDS_default:
+            if i in json_object:
+                nd_object.__setattr__(i, json_object[i])
+            else:
+                nd_object.__setattr__(i, nd_object._JSON_FIELDS_default[i])
+
+        for i in nd_object._JSON_FIELDS_other:
+            if i in json_object:
+                nd_object.__setattr__(i, json_object[i])
+
+        return nd_object
+
+    def __str__(self):
+        return json.dumps(self.serialize(), indent=4)
+    
     def serialize(self):
         try:
             self.__serializer
